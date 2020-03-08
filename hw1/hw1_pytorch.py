@@ -33,7 +33,6 @@ for month in range(12):
                 continue
             x[month * 471 + day * 24 + hour,:] = month_to_data[month][:,day * 24 + hour : day * 24 + hour + 9].reshape(1,-1)
             y[month * 471 + day * 24 + hour,0] = month_to_data[month][9 ,day * 24 + hour + 9]
-            print(x.shape, y.shape)
 
 
 print("# normalization")
@@ -57,7 +56,7 @@ class LinearRegressionModel(torch.nn.Module):
 
     def __init__(self):
         super(LinearRegressionModel, self).__init__()
-        self.linear = torch.nn.Linear(1, 1)  # One in and one out
+        self.linear = torch.nn.Linear(162, 1)  # One in and one out
 
     def forward(self, x):
         y_pred = self.linear(x)
