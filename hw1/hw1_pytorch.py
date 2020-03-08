@@ -45,6 +45,9 @@ print("# normalization")
 x_data = Variable(torch.Tensor(x))
 y_data = Variable(torch.Tensor(y))
 
+print('x_shape: {}'.format(x_data.shape))
+print('y_shape: {}'.format(y_data.shape))
+
 print("# training")
 #dim = x.shape[1] + 1
 #w = np.zeros(shape = (dim, 1 ))
@@ -67,7 +70,7 @@ our_model = LinearRegressionModel()
 criterion = torch.nn.MSELoss(size_average = False)
 optimizer = torch.optim.SGD(our_model.parameters(), lr = 0.01)
 
-for epoch in range(500):
+for epoch in range(10):
 
     # Forward pass: Compute predicted y by passing
     # x to the model
@@ -81,7 +84,9 @@ for epoch in range(500):
     optimizer.zero_grad()
     loss.backward()
     optimizer.step()
-    print('epoch {}, loss {}'.format(epoch, loss.data[0]))
+    #print('pred_y: {}'.format(pred_y))
+    #print('y_data: {}'.format(y_data))
+    print('epoch {}, loss {}'.format(epoch, loss))
 
 #for T in range(10000):
 #    if(T % 500 == 0 ):
