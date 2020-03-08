@@ -31,6 +31,7 @@ for month in range(12):
                 continue
             x[month * 471 + day * 24 + hour,:] = month_to_data[month][:,day * 24 + hour : day * 24 + hour + 9].reshape(1,-1)
             y[month * 471 + day * 24 + hour,0] = month_to_data[month][9 ,day * 24 + hour + 9]
+            print(y.shape)
 
 print("# normalization")
 mean = np.mean(x, axis = 0)
