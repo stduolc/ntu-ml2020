@@ -10,6 +10,8 @@ print('# read training data')
 X_train = np.genfromtxt(X_train_fpath, delimiter=',', skip_header=1)
 Y_train = np.genfromtxt(Y_train_fpath, delimiter=',', skip_header=1)
 
+print("# shape of X_train:{} Y_train:{}".format(X_train.shape, Y_train.shape))
+
 def _normalize_column_0_1(X, train=True, specified_column = None, X_min = None, X_max=None):
     # The output of the function will make the specified column of the training data
     # from 0 to 1
@@ -84,7 +86,7 @@ def _gradient(X, Y_label, w, b):
 
 def _gradient_regularization(X, Y_label, w, b, lamda):
     # return the mean of the graident
-    print('shape X: {} Y: {} w: {} b: {}'.format(X.shape, Y_label.shape, w.shape, b.shape))
+    print('#shape X: {} Y: {} w: {} b: {}'.format(X.shape, Y_label.shape, w.shape, b.shape))
     y_pred = get_prob(X, w, b)
     pred_error = Y_label - y_pred
     w_grad = -np.mean(np.multiply(pred_error.T, X.T), 1)+lamda*w
