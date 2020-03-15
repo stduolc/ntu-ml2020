@@ -9,8 +9,9 @@ output_fpath = sys.argv[4]
 print('# read training data')
 X_train = np.genfromtxt(X_train_fpath, delimiter=',', skip_header=1)
 Y_train = np.genfromtxt(Y_train_fpath, delimiter=',', skip_header=1)
+X_train = np.delete(X_train, 0, axis=1)
+Y_train = np.delete(Y_train, 0, axis=1)
 
-print("# shape of X_train:{} Y_train:{}".format(X_train.shape, Y_train.shape))
 
 def _normalize_column_0_1(X, train=True, specified_column = None, X_min = None, X_max=None):
     # The output of the function will make the specified column of the training data
@@ -65,7 +66,7 @@ def _sigmoid(z):
 
 def get_prob(X, w, b):
     # the probability to output 1
-    return _sigmoid(np.add(np.matmul(X, w), b))
+    return _sigmoid(np.matmul(X, w) + b)
 
 def infer(X, w, b):
     # use round to infer the result
@@ -80,15 +81,18 @@ def _gradient(X, Y_label, w, b):
     # return the mean of the graident
     y_pred = get_prob(X, w, b)
     pred_error = Y_label - y_pred
-    w_grad = -np.mean(np.multiply(pred_error.T, X.T), 1)
-    b_grad = -np.mean(pred_error)
+#    w_grad = -np.mean(np.multiply(pred_error, X.T), 1)
+    print("## shape: pred_error={} X={}".format(pred_error.shape, X.shape))
+    w_grad = -np.sum(pred_error * X.T, 1)
+    b_grad = -np.sum(pred_error)
     return w_grad, b_grad
 
 def _gradient_regularization(X, Y_label, w, b, lamda):
     # return the mean of the graident
-    print('#shape X: {} Y: {} w: {} b: {}'.format(X.shape, Y_label.shape, w.shape, b.shape))
+    #shape X: (32, 511) Y: (32, 2) w: (511, 2) b: (1,2)
     y_pred = get_prob(X, w, b)
     pred_error = Y_label - y_pred
+    #shape: pred_error:(32, 2) X:(32, 511) w:(511, 2)
     w_grad = -np.mean(np.multiply(pred_error.T, X.T), 1)+lamda*w
     b_grad = -np.mean(pred_error)
     return w_grad, b_grad
@@ -102,12 +106,14 @@ def accuracy(Y_pred, Y_label):
 
 def train(X_train, Y_train):
     # split a validation set
+
     dev_size = 0.1155
     X_train, Y_train, X_dev, Y_dev = train_dev_split(X_train, Y_train, dev_size = dev_size)
+    # X_train.shape: (47989, 511) Y_train.shape: (47989, 2) X_dev.shape: (6267, 511) Y_dev.shape: (6267, 2)
 
     # Use 0 + 0*x1 + 0*x2 + ... for weight initialization
-    w = np.zeros((X_train.shape[1],2))
-    b = np.zeros((2,))
+    w = np.zeros((X_train.shape[1],))
+    b = np.zeros((1,))
 
     regularize = True
     if regularize:
@@ -127,9 +133,11 @@ def train(X_train, Y_train):
     train_acc = []
     dev_acc = []
 
+
     for epoch in range(max_iter):
         # Random shuffle for each epoch
         X_train, Y_train = _shuffle(X_train, Y_train)
+        print("# shape of X_train:{} Y_train:{}".format(X_train.shape, Y_train.shape))
 
         total_loss = 0.0
         # Logistic regression train with batch
@@ -138,7 +146,8 @@ def train(X_train, Y_train):
             Y = Y_train[idx*batch_size:(idx+1)*batch_size]
 
             # Find out the gradient of the loss
-            w_grad, b_grad = _gradient_regularization(X, Y, w, b, lamda)
+            w_grad, b_grad = _gradient(X, Y, w, b)
+            #w_grad, b_grad = _gradient_regularization(X, Y, w, b, lamda)
 
             # gradient descent update
             # learning rate decay with time
