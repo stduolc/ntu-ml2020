@@ -1,37 +1,8 @@
 import sys
+import os
+import jittor as jt
+
 import numpy as np
-import torch
-import torch.nn.functional as F
-from torch import nn
-from torch.autograd import Variable
-
-class Normalizer():
-    def __init__(self, num_inputs):
-        self.n = torch.zeros(num_inputs)
-        self.mean = torch.zeros(num_inputs)
-        self.mean_diff = torch.zeros(num_inputs)
-        self.var = torch.zeros(num_inputs)
-
-    def observe(self, x):
-        self.n += 1.
-        last_mean = self.mean.clone()
-        self.mean += (x-self.mean)/self.n
-        self.mean_diff += (x-last_mean)*(x-self.mean)
-        self.var = torch.clamp(self.mean_diff/self.n, min=1e-2)
-
-    def normalize(self, inputs):
-        obs_std = torch.sqrt(self.var)
-        return (inputs - self.mean)/obs_std
-
-class LinearRegression(torch.nn.Module):
-
-    def __init__(self):
-        super(LinearRegression, self).__init__()
-        self.linear = torch.nn.Linear(510, 1)
-
-    def forward(self, x):
-        y_pred = F.sigmoid(self.linear(x))
-        return y_pred
 
 X_train_fpath = sys.argv[1]
 Y_train_fpath = sys.argv[2]
@@ -44,32 +15,8 @@ Y_train = np.genfromtxt(Y_train_fpath, delimiter=',', skip_header=1)
 X_train = np.delete(X_train, 0, axis=1)
 Y_train = np.delete(Y_train, 0, axis=1)
 
-print("#X_train={} Y_train={}".format(X_train.shape, Y_train.shape))
-
-
-# These are the columns that I want to normalize
-def _normalize_column_normal(X, train=True, specified_column = None, X_mean=None, X_std=None):
-    # The output of the function will make the specified column number to
-    # become a Normal distribution
-    # When processing testing data, we need to normalize by the value
-    # we used for processing training, so we must save the mean value and
-    # the variance of the training data
-    if train:
-        if specified_column == None:
-            specified_column = np.arange(X.shape[1])
-        length = len(specified_column)
-        X_mean = np.reshape(np.mean(X[:, specified_column],0), (1, length))
-        X_std  = np.reshape(np.std(X[:, specified_column], 0), (1, length))
-
-    X[:,specified_column] = np.divide(np.subtract(X[:,specified_column],X_mean), X_std)
-
-    return X, X_mean, X_std
-
-col = [0,1,3,4,5,7,10,12,25,26,27,28]
-X_train, X_mean, X_std = _normalize_column_normal(X_train, specified_column=col)
-
-X_data = Variable(torch.Tensor(X_train).cuda())
-Y_data = Variable(torch.Tensor(Y_train).cuda())
+X_train = jt.float32(X_train)
+Y_train = jt.float32(Y_train)
 
 
 def _normalize_column_0_1(X, train=True, specified_column = None, X_min = None, X_max=None):
@@ -89,6 +36,22 @@ def _normalize_column_0_1(X, train=True, specified_column = None, X_min = None, 
 
     return X, X_max, X_min
 
+def _normalize_column_normal(X, train=True, specified_column = None, X_mean=None, X_std=None):
+    # The output of the function will make the specified column number to
+    # become a Normal distribution
+    # When processing testing data, we need to normalize by the value
+    # we used for processing training, so we must save the mean value and
+    # the variance of the training data
+    if train:
+        if specified_column == None:
+            specified_column = np.arange(X.shape[1])
+        length = len(specified_column)
+        X_mean = np.reshape(np.mean(X[:, specified_column],0), (1, length))
+        X_std  = np.reshape(np.std(X[:, specified_column], 0), (1, length))
+
+    X[:,specified_column] = np.divide(np.subtract(X[:,specified_column],X_mean), X_std)
+
+    return X, X_mean, X_std
 
 def _shuffle(X, Y):
     randomize = np.arange(len(X))
@@ -99,6 +62,9 @@ def train_dev_split(X, y, dev_size=0.25):
     train_len = int(round(len(X)*(1-dev_size)))
     return X[0:train_len], y[0:train_len], X[train_len:None], y[train_len:None]
 
+# These are the columns that I want to normalize
+#col = [0,1,3,4,5,7,10,12,25,26,27,28]
+#X_train, X_mean, X_std = _normalize_column_normal(X_train, specified_column=col)
 
 def _sigmoid(z):
     # sigmoid function can be used to output probability
@@ -145,7 +111,6 @@ def accuracy(Y_pred, Y_label):
     acc = np.sum(Y_pred == Y_label)/len(Y_pred)
     return acc
 
-
 def train(X_train, Y_train):
     # split a validation set
 
@@ -153,16 +118,24 @@ def train(X_train, Y_train):
     X_train, Y_train, X_dev, Y_dev = train_dev_split(X_train, Y_train, dev_size = dev_size)
     # X_train.shape: (47989, 511) Y_train.shape: (47989, 2) X_dev.shape: (6267, 511) Y_dev.shape: (6267, 2)
 
+    print("#X_train={} Y_train={}".format(X_train.shape, Y_train.shape))
+    os._exit(1)
+
     # Use 0 + 0*x1 + 0*x2 + ... for weight initialization
+    w = np.zeros((X_train.shape[1],1))
+    b = np.zeros((1,1))
+
     regularize = True
     if regularize:
         lamda = 0.001
     else:
         lamda = 0
 
-    max_iter = 4000 # max iteration number
+    max_iter = 1  # max iteration number
     batch_size = 32 # number to feed in the model for average to avoid bias
-    learning_rate = 0.1  # how much the model learn for each step
+    learning_rate = 0.2  # how much the model learn for each step
+    num_train = len(Y_train)
+    num_dev = len(Y_dev)
     step =1
 
     loss_train = []
@@ -171,39 +144,51 @@ def train(X_train, Y_train):
     dev_acc = []
 
 
-
-    model = LinearRegression()
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    model.to(device)
-    criterion = torch.nn.MSELoss(size_average=False)
-    optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
-
     for epoch in range(max_iter):
         # Random shuffle for each epoch
-        y_pred = model(X_data)
-        loss = criterion(y_pred, Y_data)
-        print('**epoch:{} loss:{}'.format(epoch, loss))
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
+        X_train, Y_train = _shuffle(X_train, Y_train)
 
-    return model
+        total_loss = 0.0
+        # Logistic regression train with batch
+        for idx in range(int(np.floor(len(Y_train)/batch_size))):
+            X = X_train[idx*batch_size:(idx+1)*batch_size]
+            Y = Y_train[idx*batch_size:(idx+1)*batch_size]
+
+            # Find out the gradient of the loss
+            w_grad, b_grad = _gradient(X, Y, w, b)
+            #w_grad, b_grad = _gradient_regularization(X, Y, w, b, lamda)
+
+            # gradient descent update
+            # learning rate decay with time
+            w = w - learning_rate/np.sqrt(step) * w_grad
+            b = b - learning_rate/np.sqrt(step) * b_grad
+
+            step = step+1
+
+        # Compute the loss and the accuracy of the training set and the validation set
+        y_train_pred = get_prob(X_train, w, b)
+        Y_train_pred = np.round(y_train_pred)
+        print("# shape of Y_train_pred:{} y_train_pred:{}".format(Y_train_pred.shape, y_train_pred.shape))
+        train_acc.append(accuracy(Y_train_pred, Y_train))
+        loss_train.append(_loss(y_train_pred, Y_train, lamda, w)/num_train)
+
+        y_dev_pred = get_prob(X_dev, w, b)
+        Y_dev_pred = np.round(y_dev_pred)
+        dev_acc.append(accuracy(Y_dev_pred, Y_dev))
+        loss_validation.append(_loss(y_dev_pred, Y_dev, lamda, w)/num_dev)
+
+    return w, b, loss_train, loss_validation, train_acc, dev_acc  # return loss for plotting
 
 # return loss is to plot the result
-model = train(X_train, Y_train)
+w, b, loss_train, loss_validation, train_acc, dev_acc= train(X_train, Y_train)
 
 X_test = np.genfromtxt(X_test_fpath, delimiter=',', skip_header=1)
-X_test = np.delete(X_test, 0, axis=1)
-col = [0,1,3,4,5,7,10,12,25,26,27,28]
-X_test, X_mean, X_std = _normalize_column_normal(X_test, specified_column=col)
-
-X_test = Variable(torch.Tensor(X_test).cuda())
 
 # Do the same data process to the test data
-#X_test, _, _= _normalize_column_normal(X_test, train=False, specified_column = col, X_mean=X_mean, X_std=X_std)
-result = model(X_test)
+X_test, _, _= _normalize_column_normal(X_test, train=False, specified_column = col, X_mean=X_mean, X_std=X_std)
+result = infer(X_test, w, b)
 
 with open(output_fpath, 'w') as f:
         f.write('id,label\n')
         for i, v in  enumerate(result):
-            f.write('%d,%d\n' %(i, v))
+            f.write('%d,%d\n' %(i+1, v))
