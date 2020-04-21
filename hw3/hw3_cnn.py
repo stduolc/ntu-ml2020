@@ -112,7 +112,8 @@ if __name__ == "__main__":
         transforms.ToPILImage(),
         transforms.ToTensor(),
     ])
-    batch_size = 128
+    #batch_size = 128
+    batch_size = 90
     train_set = ImgDataset(train_x, train_y, train_transform)
     val_set = ImgDataset(val_x, val_y, test_transform)
     train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True)
@@ -121,7 +122,7 @@ if __name__ == "__main__":
     model = Classifier().cuda()
     loss = nn.CrossEntropyLoss() # 因為是 classification task，所以 loss 使用 CrossEntropyLoss
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001) # optimizer 使用 Adam
-    num_epoch = 30
+    num_epoch = 20
 
     for epoch in range(num_epoch):
         epoch_start_time = time.time()
@@ -140,6 +141,7 @@ if __name__ == "__main__":
 
             train_acc += np.sum(np.argmax(train_pred.cpu().data.numpy(), axis=1) == data[1].numpy())
             train_loss += batch_loss.item()
+            torch.cuda.empty_cache()
 
         model.eval()
         with torch.no_grad():
@@ -163,7 +165,7 @@ if __name__ == "__main__":
     model_best = Classifier().cuda()
     loss = nn.CrossEntropyLoss() # 因為是 classification task，所以 loss 使用 CrossEntropyLoss
     optimizer = torch.optim.Adam(model_best.parameters(), lr=0.001) # optimizer 使用 Adam
-    num_epoch = 30
+    num_epoch = 20
 
     for epoch in range(num_epoch):
         epoch_start_time = time.time()
