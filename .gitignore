@@ -4,3 +4,6 @@
 *.gz
 *.jpg
 data/
+testing_data.txt
+training_label.txt
+training_nolabel.txt
