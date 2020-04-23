@@ -3,7 +3,9 @@
 .ipynb_checkpoints
 *.gz
 *.jpg
+*.model
 data/
 testing_data.txt
 training_label.txt
 training_nolabel.txt
+checkpoint.pth
