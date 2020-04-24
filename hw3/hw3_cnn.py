@@ -205,4 +205,3 @@ if __name__ == "__main__":
         f.write('Id,Category\n')
         for i, y in  enumerate(prediction):
             f.write('{},{}\n'.format(i, y))
-
