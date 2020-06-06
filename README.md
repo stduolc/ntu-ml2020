@@ -57,3 +57,23 @@
 
 4. 說明為何使用auc score來衡量而非binary classification常用的f1 score。如果使用f1 score會有什麼不便之處？
 
+## hw11
+
+[作业说明链接](https://docs.google.com/presentation/d/1uiyajjlvamCqbXscMbcZC5mqqC138jDPEapAjDuXHTM/edit)
+
+[代码说明链接](https://colab.research.google.com/drive/1JYY_HHtVSSOLixZfLwkxiWTRdPHJCS2t)
+
+## hw12
+
+[作业说明链接](https://docs.google.com/presentation/d/1EdSZBRQqJhvpS9-x1pASnO5P4-O-j-_OPIf7KytcGmg/edit#slide=id.g7be340f71d_0_186)
+
+[代码说明链接](https://colab.research.google.com/drive/1cTdIDT_fsBWGbaljhPSmBI6gwkw-tQ2H)
+
+1. 請描述你實作的模型架構、方法以及 accuracy 為何。其中你的方法必須為 domain adversarial training 系列(就是你的方法必須要讓輸入 training data & testing data 後的某一層輸出 distribution 要相近)。(2%)
+
+2. 請視覺化真實圖片以及手繪圖片通過沒有使用 domain adversarial training 的 feature extractor 的 domain 分布圖。(2%)
+
+3. 請視覺化真實圖片以及手繪圖片通過有使用 domain adversarial training 的 feature extractor 的 domain分布圖。(2%)
+
+
+

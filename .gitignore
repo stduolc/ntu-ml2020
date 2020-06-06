@@ -1,4 +1,5 @@
 *.csv
+*.bin
 *.npy
 .ipynb_checkpoints
 *.gz
@@ -11,7 +12,11 @@
 *.pth
 *.ckpt
 *.npy
+*.zip
 data/
+ckpt/ 
+cmn-eng/
+real_or_drawing/
 testing_data.txt
 training_label.txt
 training_nolabel.txt
